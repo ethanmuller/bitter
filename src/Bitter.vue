@@ -515,7 +515,7 @@ function downloadPng() {
           </button>
         </div>
         <div class="navigator">
-          <div class="tool-grid" :style="{ '--arrow-size': store.panJump ? '1.75em' : '0.9em' }">
+          <div class="tool-grid" :style="{ '--arrow-size': store.panJump ? '1.75em' : '0.9em', '--arrow-bg': store.draggin ? '#eefaee' : '' }">
             <button class="neo-btn bl arrow-btn arrow-btn--horizontal" @click="shiftPan(-1, 0)"><span class="neo-btn__inner">←</span></button>
             <button class="neo-btn b arrow-btn arrow-btn--vertical" @click="shiftPan(0, 1)"><span class="neo-btn__inner">↓</span></button>
             <button class="neo-btn t arrow-btn arrow-btn--vertical" @click="shiftPan(0, -1)"><span class="neo-btn__inner">↑</span></button>
@@ -670,6 +670,7 @@ function downloadPng() {
   color: #666;
   font-size: var(--arrow-size);
   font-weight: bold;
+  background: var(--arrow-bg);
 
   line-height: 0;
 
