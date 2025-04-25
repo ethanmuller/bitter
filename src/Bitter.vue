@@ -524,6 +524,10 @@ function downloadPng() {
               <input type="checkbox" name="panJump" v-model="store.panJump" />
               🦘
             </label>
+            <label class="tl jump-ctrl">
+              <input type="checkbox" name="draggin" v-model="store.draggin" />
+              🐉
+            </label>
           </div>
           <Spravigator :theme="theme"/>
           <button @click="openExportWindow" class="neo-btn export-button">📸</button>
@@ -591,6 +595,9 @@ function downloadPng() {
 }
 .tool-grid .tr {
   grid-area: tr;
+}
+.arrows .tl {
+  grid-area: tl;
 }
 .jump-ctrl {
   display: flex;
