@@ -134,6 +134,9 @@ async function createServer() {
         console.log(`${room} - disconnect: ${socket.id} @ ${new Date().toLocaleString()}, reason: ${reason}`)
         const roomClients = Array.from(io.sockets.adapter.rooms.get(room) || []);
         socket.broadcast.to(room).emit('player list', roomClients)
+        if (roomClients.length < 1 ) {
+          sendMessage(`Party's over: https://ethanmuller.com/bitter/#/${room}`)
+        }
       }
 
       const roomStatus = {};
