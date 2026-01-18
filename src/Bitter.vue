@@ -67,16 +67,22 @@ const state = reactive({
 
 function handleKeyDown(event) {
    if (event.key === 'w' || event.key === 'ArrowUp') {
-    shiftPan(0, -1)
+    arrowBtn(0, -1)
    }
    if (event.key === 'a' || event.key === 'ArrowLeft') {
-    shiftPan(-1, 0)
+    arrowBtn(-1, 0)
    }
    if (event.key === 's' || event.key === 'ArrowDown') {
-    shiftPan(0, 1)
+    arrowBtn(0, 1)
    }
    if (event.key === 'd' || event.key === 'ArrowRight') {
-    shiftPan(1, 0)
+    arrowBtn(1, 0)
+   }
+   if (event.key === 'q') {
+    store.draggin = !store.draggin
+   }
+   if (event.key === 'e') {
+    store.panJump = !store.panJump
    }
 }
 
@@ -221,6 +227,89 @@ function life() {
   sfx.bwip()
   store.socket.emit('sfx', 'bwip')
 }
+function shiftSwapChunk(dx, dy) {
+  // Get both chunks
+  const chunkA = store.chunkGet(store.pan[0], store.pan[1], viewWidth, viewHeight)
+  const chunkB = store.chunkGet(store.pan[0] + dx, store.pan[1] + dy, viewWidth, viewHeight)
+  
+  const height = chunkA.length
+  const width = chunkA[0].length
+  
+  // Make a complete copy of chunkA before we modify anything
+  const tempChunk = Array(height).fill().map(() => Array(width).fill(0))
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      tempChunk[y][x] = chunkA[y][x]
+    }
+  }
+  
+  // Now we can safely copy chunkB to chunkA
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      chunkA[y][x] = chunkB[y][x]
+    }
+  }
+  
+  // Finally copy the saved chunkA (tempChunk) to chunkB
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      chunkB[y][x] = tempChunk[y][x]
+    }
+  }
+  
+  // Update both chunks in storage
+  store.chunkSet(store.pan[0], store.pan[1], chunkA)
+  store.chunkSet(store.pan[0] - dx, store.pan[1] - dy, chunkB)
+  
+  // Emit the changes
+  store.socket.emit('chunkSet', store.pan[0], store.pan[1], chunkA)
+  store.socket.emit('chunkSet', store.pan[0] + dx, store.pan[1] + dy, chunkB)
+  
+  // If you need to shift the view too
+  shiftPan(dx, dy)
+  
+  // Play sound effect
+  sfx.bwip()
+  store.socket.emit('sfx', 'bwip')
+}
+
+function shiftWithinView(dx, dy) {
+  const chunk = getViewedChunk()
+  const height = chunk.length
+  const width = chunk[0].length
+  
+  // Create a new array for the shifted result
+  const shiftedChunk = Array(height).fill().map(() => Array(width).fill(0))
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Calculate new positions with wrap-around
+      const newX = (x + dx + width) % width
+      const newY = (y + dy + height) % height
+      
+      // Copy cell to new position
+      shiftedChunk[newY][newX] = chunk[y][x]
+    }
+  }
+  
+  // Update and emit the shifted chunk
+  store.chunkSet(store.pan[0], store.pan[1], shiftedChunk)
+  store.socket.emit('chunkSet', store.pan[0], store.pan[1], shiftedChunk)
+  sfx.bwip()
+  store.socket.emit('sfx', 'bwip')
+}
+
+function arrowBtn(x,y) {
+ if (store.draggin) {
+   if (store.panJump) {
+     shiftSwapChunk(x,y)
+   } else {
+     shiftWithinView(x,y)
+   }
+ } else {
+   shiftPan(x,y)
+ }
+}
 
 function xFlip() {
   const chunk = getViewedChunk()
@@ -278,8 +367,8 @@ function rotate90_clockwise() {
 function getViewedChunk() {
   const chunk = store.px.slice(store.pan[1], store.pan[1]+9)
 
-  for (let y = 0; y < 9; y++) {
-    chunk[y] = chunk[y].slice(store.pan[0], store.pan[0]+9)
+  for (let y = 0; y < viewHeight; y++) {
+    chunk[y] = chunk[y].slice(store.pan[0], store.pan[0]+viewHeight)
   }
 
   return chunk
@@ -516,10 +605,10 @@ function downloadPng() {
         </div>
         <div class="navigator">
           <div class="tool-grid" :style="{ '--arrow-size': store.panJump ? '1.75em' : '0.9em', '--arrow-bg': store.draggin ? '#eefaee' : '' }">
-            <button class="neo-btn bl arrow-btn arrow-btn--horizontal" @click="shiftPan(-1, 0)"><span class="neo-btn__inner">←</span></button>
-            <button class="neo-btn b arrow-btn arrow-btn--vertical" @click="shiftPan(0, 1)"><span class="neo-btn__inner">↓</span></button>
-            <button class="neo-btn t arrow-btn arrow-btn--vertical" @click="shiftPan(0, -1)"><span class="neo-btn__inner">↑</span></button>
-            <button class="neo-btn br arrow-btn arrow-btn--horizontal" @click="shiftPan(1, 0)"><span class="neo-btn__inner">→</span></button>
+            <button class="neo-btn bl arrow-btn arrow-btn--horizontal" @click="arrowBtn(-1, 0)"><span class="neo-btn__inner">←</span></button>
+            <button class="neo-btn b arrow-btn arrow-btn--vertical" @click="arrowBtn(0, 1)"><span class="neo-btn__inner">↓</span></button>
+            <button class="neo-btn t arrow-btn arrow-btn--vertical" @click="arrowBtn(0, -1)"><span class="neo-btn__inner">↑</span></button>
+            <button class="neo-btn br arrow-btn arrow-btn--horizontal" @click="arrowBtn(1, 0)"><span class="neo-btn__inner">→</span></button>
             <label class="tr jump-ctrl">
               <input type="checkbox" name="panJump" v-model="store.panJump" />
               🦘

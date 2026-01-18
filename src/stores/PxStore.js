@@ -34,6 +34,7 @@ export const usePxStore = defineStore('main', {
       socket: null,
       pan: [0,0],
       panJump: true,
+      draggin: false,
       invertFlip: 0,
       xFlip: 0,
       yFlip: 0,
@@ -78,6 +79,15 @@ export const usePxStore = defineStore('main', {
           this.pset(x + panX, y + panY, chunkPx[y][x])
         }
       }
+    },
+    chunkGet(offsetX, offsetY, width, height) {
+      const chunk = Array(height).fill().map(() => Array(width).fill(0))
+      for (let y = 0; y < chunk.length; y++) {
+        for (let x = 0; x < chunk.length; x++) {
+          chunk[y][x] = this.px[y+offsetY][x+offsetX]
+        }
+      }
+      return chunk
     },
     setPan(x, y) {
       x = Math.max(x, 0)
